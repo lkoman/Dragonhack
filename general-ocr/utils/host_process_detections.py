@@ -227,4 +227,3 @@ class CropConfigsCreator(dai.node.HostNode):
             raise TypeError("Value must be an integer.")
         if value < 1:
             raise ValueError("Value must be greater than 1.")
-

@@ -1,6 +1,60 @@
+import threading
+import queue
+from http.server import HTTPServer, BaseHTTPRequestHandler
+from socketserver import ThreadingMixIn
 import numpy as np
 import depthai as dai
 from depthai_nodes.utils import AnnotationHelper
+
+text_queue = queue.Queue()
+
+class SSEHandler(BaseHTTPRequestHandler):
+    def log_message(self, format, *args):
+        pass
+
+    def do_GET(self):
+        if self.path == "/":
+            self.send_response(200)
+            self.send_header("Content-type", "text/html")
+            self.end_headers()
+            html = """
+            <!DOCTYPE html>
+            <html>
+            <body style="background:white; font-family:sans-serif; padding:40px; font-size:32px;">
+              <div id="text"></div>
+              <script>
+                const es = new EventSource("/stream");
+                es.onmessage = e => {
+                  const line = document.createElement("p");
+                  line.textContent = e.data;
+                  document.getElementById("text").appendChild(line);
+                };
+              </script>
+            </body>
+            </html>
+            """.encode()
+            self.wfile.write(html)
+
+        elif self.path == "/stream":
+            self.send_response(200)
+            self.send_header("Content-type", "text/event-stream")
+            self.send_header("Cache-Control", "no-cache")
+            self.send_header("Access-Control-Allow-Origin", "*")
+            self.end_headers()
+            try:
+                while True:
+                    text = text_queue.get()
+                    self.wfile.write(f"data: {text}\n\n".encode())
+                    self.wfile.flush()
+            except:
+                pass
+
+class ThreadedHTTPServer(ThreadingMixIn, HTTPServer):
+    pass
+
+def start_server():
+    server = ThreadedHTTPServer(("0.0.0.0", 8080), SSEHandler)
+    server.serve_forever()
 
 class OCRAnnotationNode(dai.node.ThreadedHostNode):
     def __init__(self):
@@ -11,7 +65,11 @@ class OCRAnnotationNode(dai.node.ThreadedHostNode):
         self.text_annotations_output = self.createOutput()
         self.seen_texts = set()
 
-    def is_white_background(self, frame, points, w, h, threshold=200, white_ratio=0.6):
+        t = threading.Thread(target=start_server, daemon=True)
+        t.start()
+        print("Web server running at http://localhost:8080")
+
+    def is_white_background(self, frame, points, w, h, threshold=150, white_ratio=0.3):
         xs = [int(p.x * w) for p in points]
         ys = [int(p.y * h) for p in points]
         xmin, xmax = max(0, min(xs)), min(w, max(xs))
@@ -42,7 +100,7 @@ class OCRAnnotationNode(dai.node.ThreadedHostNode):
                     detection = detections_list[i]
                     points = detection.rotated_rect.getPoints()
 
-                    if not self.is_white_background(frame_np, points, w, h, threshold=150, white_ratio=0.3):
+                    if not self.is_white_background(frame_np, points, w, h):
                         continue
 
                     text_line = ""
@@ -53,8 +111,7 @@ class OCRAnnotationNode(dai.node.ThreadedHostNode):
 
                     if text_line.strip() and text_line.strip() not in self.seen_texts:
                         self.seen_texts.add(text_line.strip())
-                        with open("ocr_output.txt", "a") as f:
-                            f.write(text_line.strip() + "\n")
+                        text_queue.put(text_line.strip())
 
                     size = int(points[3].y * h - points[0].y * h)
                     annotation_helper.draw_text(
