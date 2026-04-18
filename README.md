@@ -3,7 +3,7 @@
 ## How to run
 ### Naredi venv (ce zelis, priporocam)
 ```
-python -m venv venv
+python -m venv venv 
 venv\Scripts\activate
 ```
 ### Install requirements

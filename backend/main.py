@@ -29,7 +29,7 @@ def capture_loop(ip: str):
     video_queue = cam.requestOutput((640, 480), type=dai.ImgFrame.Type.BGR888i).createOutputQueue()
     pipeline_instance.start()
     while pipeline_instance.isRunning():
-        frame_msg = video_queue.get()
+        frame_msg = video_queue.get() 
         if frame_msg is None:
             continue
         frame = frame_msg.getCvFrame()
