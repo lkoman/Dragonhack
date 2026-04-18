@@ -10,13 +10,21 @@ es.onopen = () => {
 };
 es.onmessage = e => {
   const container = document.getElementById("ocrText");
-  const empty = container.querySelector(".ocr-empty");
-  if (empty) empty.remove();
-
-  const line = document.createElement("p");
-  line.textContent = e.data;
-  container.appendChild(line);
-  container.scrollTop = container.scrollHeight;
+  let items;
+  try { items = JSON.parse(e.data); } catch { return; }
+  container.innerHTML = "";
+  if (!items.length) {
+    const empty = document.createElement("span");
+    empty.className = "ocr-empty";
+    empty.textContent = "No text visible";
+    container.appendChild(empty);
+    return;
+  }
+  for (const item of items) {
+    const line = document.createElement("p");
+    line.textContent = item;
+    container.appendChild(line);
+  }
 };
 es.onerror = () => {
   document.getElementById("ocrDot").classList.remove("active");

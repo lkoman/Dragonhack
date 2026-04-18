@@ -1,5 +1,8 @@
 fastapi
 uvicorn[standard]
 opencv-python
-depthai
- 
+depthai==3.0.0
+depthai-nodes==0.3.4
+numpy>=1.22
+openai>=1.0
+python-dotenv

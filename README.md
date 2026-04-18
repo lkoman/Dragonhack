@@ -11,8 +11,16 @@ venv\Scripts\activate
 pip install -r requirements.txt
 ```
 
+### Dodaj api key
+```
+naredi mapo .env v folderju backend
+dodaj not line:
+OPENAI_API_KEY=sk-.........kljuc
+```
+
 ### Zalaufi backend
 ```
+cd backend
 uvicorn main:app --reload --port 8000
 ```
 

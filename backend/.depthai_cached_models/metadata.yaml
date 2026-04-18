@@ -1,0 +1,16 @@
+C:\Users\Laraana\Desktop\Me\Faks\3. letnik VSS\Dragonhack\backend\depthai_models\paddle_text_detection.RVC4.yaml:
+  hash: 5214946c0a16e259c8c508afd2e96775
+  model_id: aim_CRdtxTT6tWvqWinZRVqEAu
+  model_version_id: aimv_F94Bkou8McG4AipgD9uJqr
+  model_instance_id: aimi_DPup2ZLqT8CLeGhr1tuUY
+  downloaded_files:
+    - new_v4.rvc4.tar.xz
+  folder_name: 3fa2bb4d7a8603ab45f1efaf040831cf7f0fb32a
+C:\Users\Laraana\Desktop\Me\Faks\3. letnik VSS\Dragonhack\backend\depthai_models\paddle_text_recognition.RVC4.yaml:
+  hash: 61fd2fff98496aa18a97c08a49cb331e
+  model_id: aim_BtVVsb4TNc3krsj53gpEaL
+  model_version_id: aimv_GQCCMVfg7gbgCmu2wb71x1
+  model_instance_id: aimi_Ej4QJiisWYftM1kUeV7sR3
+  downloaded_files:
+    - paddle_ocr.rvc4.tar.xz
+  folder_name: 540f1b579bb24c87a6bb77d314ac0707221fd35e
