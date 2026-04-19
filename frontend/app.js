@@ -3,6 +3,12 @@ const OCR_BACKEND = "http://localhost:8080";
 const TRANSCRIPT_BACKEND = "http://localhost:8081";
 let streaming = false;
 
+const predavanjeName = new URLSearchParams(window.location.search).get("name");
+if (predavanjeName) {
+  document.getElementById("predavanjeTitle").textContent = predavanjeName;
+  document.title = `${predavanjeName} — Dragonhack Jебачи`;
+}
+
 // OCR stream
 const es = new EventSource(`${OCR_BACKEND}/stream`);
 es.onopen = () => {

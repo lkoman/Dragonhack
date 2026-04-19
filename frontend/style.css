@@ -276,3 +276,113 @@ select {
   color: var(--muted);
   font-size: 13px;
 }
+
+/* Menu */
+.menu-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 28px;
+}
+
+.menu-header {
+  margin-bottom: 20px;
+}
+
+.menu-add {
+  display: flex;
+  gap: 12px;
+  margin-bottom: 24px;
+}
+
+.menu-input {
+  flex: 1;
+  background: #1a1a1a;
+  border: 1px solid var(--border);
+  color: var(--text);
+  font-family: 'DM Mono', monospace;
+  font-size: 14px;
+  padding: 12px 14px;
+  border-radius: 6px;
+  outline: none;
+  transition: border-color 0.2s;
+}
+
+.menu-input:focus { border-color: var(--accent); }
+
+.menu-add-btn {
+  flex: 0 0 auto;
+  padding: 12px 22px;
+}
+
+.menu-list {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.menu-item {
+  display: flex;
+  align-items: stretch;
+  background: #1a1a1a;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  overflow: hidden;
+  transition: border-color 0.2s;
+}
+
+.menu-item:hover { border-color: var(--accent); }
+
+.menu-item-link {
+  flex: 1;
+  padding: 14px 18px;
+  color: var(--text);
+  text-decoration: none;
+  font-size: 15px;
+}
+
+.menu-item-link:hover { color: var(--accent); }
+
+.menu-item-del {
+  background: none;
+  border: none;
+  border-left: 1px solid var(--border);
+  color: var(--muted);
+  font-size: 20px;
+  width: 44px;
+  cursor: pointer;
+  transition: color 0.2s, background 0.2s;
+}
+
+.menu-item-del:hover { color: #ff4444; background: rgba(255, 68, 68, 0.05); }
+
+.menu-empty {
+  color: var(--muted);
+  font-size: 13px;
+  text-align: center;
+  padding: 24px 0;
+}
+
+/* Back link in predavanje view */
+.back-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--muted);
+  text-decoration: none;
+  font-size: 12px;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  transition: color 0.2s;
+}
+
+.back-link:hover { color: var(--accent); }
+
+.predavanje-title {
+  font-size: 13px;
+  color: var(--accent);
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  margin-left: auto;
+}
