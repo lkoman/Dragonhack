@@ -1,11 +1,17 @@
 # tvoja mami
 
 ## How to run
-### Naredi venv (ce zelis, priporocam)
+### Naredi venv (ce zelis, priporocam) nujno potreben Python 3.12
 ```
 python -m venv venv 
 venv\Scripts\activate
 ```
+### V primeru, da imaš več verzij
+```
+py -3.12 -m venv venv 
+venv\Scripts\activate
+```
+
 ### Install requirements
 ```
 pip install -r requirements.txt
