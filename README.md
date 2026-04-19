@@ -1,38 +1,64 @@
 # Rostra
 
-Rostra is a multimodel AI web app for live lectures: speech-to-text, slide OCR, presenter engagement score, and GPT summaries. It turns voice, text, and visuals into real-time feedback and a searchable archive for later.
+Rostra is a multimodal AI web application for live lectures. It
+processes speech, text, and visual input in real time to provide
+transcription, slide OCR, engagement analysis, and AI-generated
+summaries. It also builds a searchable archive of lecture content for
+later review.
 
-## How to run
-### Naredi venv (ce zelis, priporocam) nujno potreben Python 3.12
-```
-python -m venv venv 
+## Requirements
+
+-   Python 3.12
+-   (Recommended) virtual environment
+
+## Setup
+
+### 1. Create and activate virtual environment
+
+``` bash
+python -m venv venv
 venv\Scripts\activate
 ```
-### V primeru, da imaš več verzij
-```
-py -3.12 -m venv venv 
+
+If multiple Python versions are installed:
+
+``` bash
+py -3.12 -m venv venv
+(or python3.12 -m venv venv)
 venv\Scripts\activate
 ```
 
-### Install requirements
-```
+### 2. Install dependencies
+
+``` bash
 pip install -r requirements.txt
 ```
 
-### Dodaj api key
-```
-naredi mapo .env v folderju backend
-dodaj not line:
-OPENAI_API_KEY=sk-.........kljuc
-```
+### 3. Configure API key
 
-### Zalaufi backend
-```
+Create a `.env` file inside the `backend/` directory:
+
+    backend/.env
+
+Add:
+
+    OPENAI_API_KEY=your_api_key_here
+
+### 4. Run backend
+
+``` bash
 cd backend
 uvicorn main:app --reload --port 8000
 ```
 
-### Zalaufi frontend
-```
-desn klik na index.html -> Open with live server
-```
+### 5. Run frontend
+
+Option 1: - Open `frontend/menu.html` in browser
+
+Option 2: - Use VSCode Live Server - Right click `menu.html` - Open with
+Live Server
+
+## Notes
+
+-   Backend runs on http://localhost:8000
+-   Ensure backend is running before using frontend
