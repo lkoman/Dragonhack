@@ -14,3 +14,19 @@ C:\Users\Laraana\Desktop\Me\Faks\3. letnik VSS\Dragonhack\backend\depthai_models
   downloaded_files:
     - paddle_ocr.rvc4.tar.xz
   folder_name: 540f1b579bb24c87a6bb77d314ac0707221fd35e
+C:\Users\Laraana\Desktop\Me\Faks\3. letnik VSS\Dragonhack\backend\depthai_models\yunet.RVC4.yaml:
+  hash: c7f1821fd874b82bd950f6cf2c62c761
+  model_id: aim_8TPr5pvDyoe5cAvrPbzNxc
+  model_version_id: aimv_Tz4ax3aVqBmNWzZi1nFwYH
+  model_instance_id: aimi_TjFy8Z9fceDT2KkGCcdq34
+  downloaded_files:
+    - yunet-s-480x640.rvc4.tar.xz
+  folder_name: c053f862668feebda5e4d21ac74558a40f53dbd4
+C:\Users\Laraana\Desktop\Me\Faks\3. letnik VSS\Dragonhack\backend\depthai_models\head_pose_estimation.RVC4.yaml:
+  hash: 0b5a5440f874dfca6b80e37a32447555
+  model_id: aim_J8nPuAsSKUx4krJRrCBXq9
+  model_version_id: aimv_Hrj7PSkTGpcwqCFisEJ1JW
+  model_instance_id: aimi_EU6evVCuBsuF4vtbZeJFbk
+  downloaded_files:
+    - head_pose.rvc4.tar.xz
+  folder_name: 4ea2f62d12e847ee8f872d4c250a39fcfb1543a6

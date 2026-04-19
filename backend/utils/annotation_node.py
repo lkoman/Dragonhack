@@ -17,7 +17,7 @@ except ImportError:
 
 FLUSH_INTERVAL_S = 5.0
 LINE_BUCKET = 0.05  # rows within 5% of frame height are treated as the same line
-GPT_MODEL = "gpt-3.5-turbo" # "gpt-4o-mini"
+GPT_MODEL = "gpt-4o-mini" # "gpt-3.5-turbo"
 
 _openai_client = None
 
@@ -64,11 +64,18 @@ def _clean_texts_via_gpt(texts):
                 "3. BROKEN SENTENCE -> REPAIR. If a reading is a sentence with "
                 "missing, extra, or wrong words, rewrite it as the most likely "
                 "intended sentence.\n"
-                "4. FRAGMENTS -> COMBINE. If multiple readings look like "
-                "fragments or garbled pieces of one underlying sentence, output "
-                "the SAME full reconstructed sentence for each fragment so they "
-                "collapse into one entry after dedup. Use context from the whole "
-                "list to figure out what the sentence is.\n"
+                "4. WORDS/FRAGMENTS -> COMBINE INTO SENTENCES. The readings are "
+                "usually individual words or short fragments detected separately "
+                "from the same slide/scene, and they almost always fit together "
+                "into one (or a few) coherent sentences or phrases. Assemble them "
+                "into the most plausible sentence(s) using context, common sense, "
+                "and natural English word order. If a group of readings clearly "
+                "belongs to one sentence, output the SAME full assembled sentence "
+                "for every reading in that group so they collapse into a single "
+                "entry after dedup. Prefer combining over keeping words isolated "
+                "whenever a reasonable sentence can be formed. Only leave a "
+                "reading standalone if it genuinely does not fit with any other "
+                "reading (e.g. a heading, a label, or a single-word title).\n"
                 "5. VARIANTS -> CANONICALIZE. If multiple readings are variants "
                 "of the same word or sentence, output the EXACT SAME canonical "
                 "string for all of them (ignore minor word-order, spelling, or "
@@ -173,9 +180,9 @@ class OCRAnnotationNode(dai.node.ThreadedHostNode):
                 continue
 
             raw_texts = [t for t, _, _ in raw_items]
-            print(f"[OCR raw]     {raw_texts}")
+            #print(f"[OCR raw]     {raw_texts}")
             cleaned_texts = _clean_texts_via_gpt(raw_texts)
-            print(f"[OCR cleaned] {cleaned_texts}")
+            # print(f"[OCR cleaned] {cleaned_texts}")
 
             dedup = {}
             for (_, y, x), cleaned in zip(raw_items, cleaned_texts):

@@ -1,11 +1,15 @@
+import { SonioxClient } from "https://esm.sh/@soniox/client";
+
 const BACKEND = "http://localhost:8000";
 const OCR_BACKEND = "http://localhost:8080";
-const TRANSCRIPT_BACKEND = "http://localhost:8081";
+
+let streaming = false;
 let engagementInterval = null;
 let volumeInterval = null;
 
 function animateVolumeMeter(active, level) {
   const meter = document.getElementById("volumeMeter");
+  if (!meter) return;
   const bars = meter.querySelectorAll(".vm-bar");
   if (!active) {
     meter.className = "volume-meter";
@@ -23,11 +27,15 @@ function animateVolumeMeter(active, level) {
 
 function setEngagement(score) {
   const el = document.getElementById("engagementScore");
+  if (!el) return;
   el.textContent = score === null ? "—" : `${score}%`;
+  if (score === null) {
+    el.className = "engagement-score";
+    return;
+  }
   const level = score >= 70 ? "high" : score >= 40 ? "mid" : "low";
-  el.className = "engagement-score" + (score !== null ? ` ${level}` : "");
+  el.className = `engagement-score ${level}`;
 }
-
 
 const predavanjeName = new URLSearchParams(window.location.search).get("name");
 if (predavanjeName) {
@@ -35,15 +43,26 @@ if (predavanjeName) {
   document.title = `${predavanjeName} — Dragonhack Jебачи`;
 }
 
-// OCR stream
-const es = new EventSource(`${OCR_BACKEND}/stream`);
-es.onopen = () => {
-  document.getElementById("ocrDot").classList.add("active");
-};
-es.onmessage = e => {
+const ocrKey = predavanjeName ? `predavanje_ocr_${predavanjeName}` : "predavanje_ocr__default";
+
+function loadStored(key) {
+  try { return JSON.parse(localStorage.getItem(key)) || []; } catch { return []; }
+}
+function saveStored(key, list) {
+  try { localStorage.setItem(key, JSON.stringify(list)); } catch {}
+}
+
+function normalizeOcr(s) {
+  return (s || "").toLowerCase().replace(/[^a-z0-9]/g, "");
+}
+
+let ocrItems = loadStored(ocrKey).filter(s => typeof s === "string" && s.trim() && normalizeOcr(s));
+let ocrSeen = new Set(ocrItems.map(normalizeOcr));
+
+let es = null;
+
+function renderOcrLive(items) {
   const container = document.getElementById("ocrText");
-  let items;
-  try { items = JSON.parse(e.data); } catch { return; }
   container.innerHTML = "";
   if (!items.length) {
     const empty = document.createElement("span");
@@ -57,29 +76,67 @@ es.onmessage = e => {
     line.textContent = item;
     container.appendChild(line);
   }
-};
-es.onerror = () => {
-  document.getElementById("ocrDot").classList.remove("active");
-};
+}
 
-// Transcript stream
-const ts = new EventSource(`${TRANSCRIPT_BACKEND}/stream`);
-ts.onopen = () => {
-  document.getElementById("transcriptDot").classList.add("active");
-};
-ts.onmessage = e => {
-  const container = document.getElementById("transcriptText");
-  const empty = container.querySelector(".ocr-empty");
-  if (empty) empty.remove();
-
-  const line = document.createElement("p");
-  line.textContent = e.data;
-  container.appendChild(line);
+function renderOcrStored() {
+  const container = document.getElementById("ocrText");
+  container.innerHTML = "";
+  if (!ocrItems.length) {
+    const empty = document.createElement("span");
+    empty.className = "ocr-empty";
+    empty.textContent = "Waiting for text...";
+    container.appendChild(empty);
+    return;
+  }
+  for (const item of ocrItems) {
+    const line = document.createElement("p");
+    line.textContent = item;
+    container.appendChild(line);
+  }
   container.scrollTop = container.scrollHeight;
-};
-ts.onerror = () => {
-  document.getElementById("transcriptDot").classList.remove("active");
-};
+}
+
+renderOcrStored();
+
+function openStreams() {
+  if (es) return;
+
+  es = new EventSource(`${OCR_BACKEND}/stream`);
+  es.onopen = () => {
+    document.getElementById("ocrDot").classList.add("active");
+  };
+  es.onmessage = e => {
+    if (!streaming) return;
+    let items;
+    try { items = JSON.parse(e.data); } catch { return; }
+    const liveItems = [];
+    let changed = false;
+    for (const item of items) {
+      if (typeof item !== "string") continue;
+      const trimmed = item.trim();
+      if (!trimmed) continue;
+      const key = normalizeOcr(trimmed);
+      if (!key) continue;
+      liveItems.push(trimmed);
+      if (!ocrSeen.has(key)) {
+        ocrSeen.add(key);
+        ocrItems.push(trimmed);
+        changed = true;
+      }
+    }
+    if (changed) saveStored(ocrKey, ocrItems);
+    renderOcrLive(liveItems);
+  };
+  es.onerror = () => {
+    document.getElementById("ocrDot").classList.remove("active");
+  };
+}
+
+function closeStreams() {
+  if (es) { es.close(); es = null; }
+  const ocrDot = document.getElementById("ocrDot");
+  if (ocrDot) ocrDot.classList.remove("active");
+}
 
 async function fetchDevices() {
   const select = document.getElementById("deviceSelect");
@@ -114,254 +171,141 @@ async function connectDevice() {
   document.getElementById("startBtn").disabled = false;
 }
 
+/* ---------------- Soniox transcription ---------------- */
+
+const sonioxClient = new SonioxClient({
+  api_key: "12e95c60016fa692812197e892e6193d9c38a3b8037ac81b871efe4b2ba1b4dc"
+});
+
+let lockedText = "";
+let liveText = "";
+let recording = null;
+
+function renderTranscript() {
+  const transcriptDiv = document.getElementById("transcriptText");
+  if (!transcriptDiv) return;
+  transcriptDiv.innerHTML =
+    `<span class="locked-text">${lockedText}</span>` +
+    (liveText ? ` <span class="live-text">${liveText}</span>` : "");
+}
+
+async function startTranscription() {
+  const transcriptDot = document.getElementById("transcriptDot");
+  if (transcriptDot) transcriptDot.classList.add("active");
+  lockedText = "";
+  liveText = "";
+  renderTranscript();
+
+  recording = sonioxClient.realtime.record({
+    model: "stt-rt-v4",
+    language_hints: ["en", "sl"],
+    enable_endpoint_detection: true
+  });
+
+  recording.on("result", (result) => {
+    let temp = "";
+    for (const token of result.tokens || []) {
+      if (!token.text) continue;
+      temp += token.text;
+    }
+    liveText = temp;
+    renderTranscript();
+  });
+
+  const lockLive = () => {
+    if (liveText.trim()) {
+      lockedText += (lockedText ? " " : "") + liveText.trim();
+    }
+    liveText = "";
+    renderTranscript();
+  };
+
+  recording.on("finalized", lockLive);
+  recording.on("endpoint", lockLive);
+  recording.on("error", console.error);
+}
+
+async function stopTranscription() {
+  const transcriptDot = document.getElementById("transcriptDot");
+  if (transcriptDot) transcriptDot.classList.remove("active");
+  if (recording) {
+    try { await recording.stop(); } catch {}
+    recording = null;
+  }
+}
+
+/* ---------------- engagement polling ---------------- */
+
+async function pollEngagement() {
+  try {
+    const res = await fetch(`${BACKEND}/engagement/score`);
+    const data = await res.json();
+    const score = Math.round(data.live_score ?? 0);
+    setEngagement(score);
+    animateVolumeMeter(true, score);
+  } catch {}
+}
+
+/* ---------------- start / stop ---------------- */
+
 function startStream() {
   streaming = true;
   const img = document.getElementById("videoFeed");
   img.src = `${BACKEND}/video-feed`;
   img.style.display = "block";
   document.getElementById("placeholder").style.display = "none";
-  document.getElementById("videoPlayback").style.display = "none";
+  const playback = document.getElementById("videoPlayback");
+  if (playback) playback.style.display = "none";
   document.getElementById("liveBadge").classList.add("visible");
   document.getElementById("startBtn").disabled = true;
   document.getElementById("stopBtn").disabled = false;
-  document.getElementById("summaryCard").style.display = "none";
-  document.querySelector(".transcript-card").classList.remove("shrunk");
 
-  // start fake live engagement updates
-  let fakeScore = 50;
-  setEngagement(fakeScore);
-  engagementInterval = setInterval(() => {
-    fakeScore = Math.min(100, Math.max(0, fakeScore + (Math.random() * 14 - 6)));
-    setEngagement(Math.round(fakeScore));
-  }, 1800);
-  volumeInterval = setInterval(() => animateVolumeMeter(true, fakeScore), 120);
+  openStreams();
+  fetch(`${BACKEND}/engagement/start`, { method: "POST" }).catch(() => {});
+  startTranscription().catch(console.error);
+
+  setEngagement(0);
+  if (engagementInterval) clearInterval(engagementInterval);
+  engagementInterval = setInterval(pollEngagement, 500);
 }
 
-function stopStream() {
+async function stopStream() {
   streaming = false;
 
-  // stop engagement live updates, show final score
-  clearInterval(engagementInterval);
-  clearInterval(volumeInterval);
+  if (engagementInterval) { clearInterval(engagementInterval); engagementInterval = null; }
+  if (volumeInterval) { clearInterval(volumeInterval); volumeInterval = null; }
   animateVolumeMeter(false, 0);
-  clearInterval(volumeInterval);
-  animateVolumeMeter(false, 0);
-  const finalScore = Math.round(40 + Math.random() * 45);
-  setEngagement(finalScore);
+
+  closeStreams();
+  await stopTranscription();
+
+  try {
+    const res = await fetch(`${BACKEND}/engagement/stop`, { method: "POST" });
+    const data = await res.json();
+    if (typeof data.final_score === "number") {
+      setEngagement(Math.round(data.final_score));
+    }
+  } catch {}
+
+  fetch(`${BACKEND}/disconnect`, { method: "POST" }).catch(() => {});
+
   const img = document.getElementById("videoFeed");
-  img.src = "";
+  img.removeAttribute("src");
   img.style.display = "none";
+  document.getElementById("placeholder").style.display = "flex";
   document.getElementById("liveBadge").classList.remove("visible");
-  document.getElementById("startBtn").disabled = false;
+  document.getElementById("startBtn").disabled = true;
   document.getElementById("stopBtn").disabled = true;
-
-  // show recorded video placeholder
-  const video = document.getElementById("videoPlayback");
-  video.src = "";
-  video.style.display = "block";
-  document.getElementById("placeholder").style.display = "none";
-
-  // show summary box and fake-generate summary
-  showSummary();
+  document.getElementById("statusDot").className = "status-dot";
+  document.getElementById("cameraName").textContent = "No device selected";
+  document.getElementById("cameraMxid").textContent = "—";
 }
 
-function showSummary() {
-  const card = document.getElementById("summaryCard");
-  const text = document.getElementById("summaryText");
-  card.style.display = "block";
-  document.querySelector(".transcript-card").classList.add("shrunk");
-  card.scrollIntoView({ behavior: "smooth", block: "start" });
+window.addEventListener("beforeunload", closeStreams);
 
-  // collect transcript lines for the real implementation later
-  const transcriptLines = Array.from(
-    document.getElementById("transcriptText").querySelectorAll("p")
-  ).map(p => p.textContent).join(" ");
-
-  // fake placeholder summary for now
-  text.innerHTML = "";
-  const placeholder = `
-    <p>The lecture covered the fundamentals of computer vision and real-time image processing pipelines.</p>
-    <p>Key topics included edge detection algorithms, convolutional neural networks, and their application to object recognition tasks.</p>
-    <p>The speaker demonstrated a live OCR pipeline and discussed latency optimizations for embedded hardware deployment.</p>
-  `.trim();
-
-  // typewriter effect so it feels alive
-  const sentences = placeholder.match(/<p>.*?<\/p>/g) || [];
-  let i = 0;
-  function addNext() {
-    if (i >= sentences.length) return;
-    const p = document.createElement("p");
-    p.innerHTML = sentences[i].replace(/<\/?p>/g, "");
-    text.appendChild(p);
-    p.style.opacity = "0";
-    p.style.transform = "translateY(6px)";
-    p.style.transition = "opacity 0.4s ease, transform 0.4s ease";
-    requestAnimationFrame(() => {
-      p.style.opacity = "1";
-      p.style.transform = "translateY(0)";
-    });
-    i++;
-    setTimeout(addNext, 500);
-  }
-  addNext();
-}
+window.startStream = startStream;
+window.stopStream = stopStream;
+window.connectDevice = connectDevice;
+window.fetchDevices = fetchDevices;
 
 fetchDevices();
-
-import { SonioxClient } from "https://esm.sh/@soniox/client";
-
-/* ---------------- STATE ---------------- */
-
-let lockedText = "";
-let liveText = "";
-let recording;
-
-const transcriptDiv = document.getElementById("transcriptText");
-const transcriptDot = document.getElementById("transcriptDot");
-
-/* ---------------- RENDER ---------------- */
-
-function render() {
-  transcriptDiv.innerHTML =
-    `<span class="locked-text">${lockedText}</span>` +
-    (liveText
-      ? ` <span class="live-text">${liveText}</span>`
-      : "");
-
-  console.log("---- RENDER ----");
-  console.log("LOCKED:", lockedText);
-  console.log("LIVE:", liveText);
-}
-
-/* ---------------- CLIENT ---------------- */
-
-const client = new SonioxClient({
-  api_key: "12e95c60016fa692812197e892e6193d9c38a3b8037ac81b871efe4b2ba1b4dc"
-});
-
-/* ---------------- START STREAM ---------------- */
-
-window.startStream = async function () {
-
-  console.log("START TRANSCRIPTION");
-
-  transcriptDot.classList.add("active");
-
-  recording = client.realtime.record({
-    model: "stt-rt-v4",
-    language_hints: ["en", "sl"],
-    enable_endpoint_detection: true
-  });
-
-  /* -------- RESULT (LIVE ONLY) -------- */
-
-  recording.on("result", (result) => {
-    console.log("RESULT:", result);
-
-    let temp = "";
-
-    for (const token of result.tokens || []) {
-      if (!token.text) continue;
-      temp += token.text;
-    }
-
-    liveText = temp;
-
-    render();
-  });
-
-  /* -------- FINALIZED (LOCK) -------- */
-
-  recording.on("finalized", () => {
-    console.log("FINALIZED");
-
-    if (liveText.trim()) {
-      console.log("LOCK ADD:", liveText);
-
-      lockedText += (lockedText ? " " : "") + liveText.trim();
-    }
-
-    liveText = "";
-
-    render();
-    triggerSummary();
-  });
-
-  /* -------- ENDPOINT (fallback) -------- */
-
-  recording.on("endpoint", () => {
-    console.log("ENDPOINT");
-
-    if (liveText.trim()) {
-      console.log("FORCE LOCK:", liveText);
-
-      lockedText += (lockedText ? " " : "") + liveText.trim();
-    }
-
-    liveText = "";
-
-    render();
-    triggerSummary();
-  });
-
-  recording.on("error", console.error);
-};
-
-/* ---------------- STOP ---------------- */
-
-window.stopStream = async function () {
-  if (recording) {
-    console.log("STOP TRANSCRIPTION");
-
-    transcriptDot.classList.remove("active");
-
-    await recording.stop();
-  }
-};
-
-/* ---------------- SUMMARY ---------------- */
-
-let summaryTimeout;
-
-function triggerSummary() {
-  clearTimeout(summaryTimeout);
-
-  summaryTimeout = setTimeout(() => {
-    const text = lockedText;
-
-    console.log("SUMMARY INPUT:", text);
-
-    if (text.length < 30) return;
-
-    summarize(text);
-  }, 2000);
-}
-
-/* ---------------- OPENAI ---------------- */
-
-async function summarize(text) {
-  const summaryDiv = document.getElementById("ocrText");
-
-  const res = await fetch("https://api.openai.com/v1/responses", {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      "Authorization": "Bearer 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"
-    },
-    body: JSON.stringify({
-      model: "gpt-4.1-mini",
-      input: `Povzemi v alineje v slovenščini:\n${text}`
-    })
-  });
-
-  const data = await res.json();
-
-  console.log("OPENAI RAW:", data);
-
-  const output =
-    data.output_text ||
-    data.output?.[0]?.content?.[0]?.text ||
-    "Napaka pri povzetku";
-
-  summaryDiv.innerHTML = `<p>${output}</p>`;
-}
