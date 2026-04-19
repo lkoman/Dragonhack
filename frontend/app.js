@@ -1,7 +1,33 @@
 const BACKEND = "http://localhost:8000";
 const OCR_BACKEND = "http://localhost:8080";
 const TRANSCRIPT_BACKEND = "http://localhost:8081";
-let streaming = false;
+let engagementInterval = null;
+let volumeInterval = null;
+
+function animateVolumeMeter(active, level) {
+  const meter = document.getElementById("volumeMeter");
+  const bars = meter.querySelectorAll(".vm-bar");
+  if (!active) {
+    meter.className = "volume-meter";
+    bars.forEach(b => b.style.height = "4px");
+    return;
+  }
+  const levelClass = level >= 70 ? "high" : level >= 40 ? "mid" : "low";
+  meter.className = `volume-meter active ${levelClass}`;
+  bars.forEach(bar => {
+    const max = 8 + (level / 100) * 28;
+    const h = 4 + Math.random() * max;
+    bar.style.height = `${h}px`;
+  });
+}
+
+function setEngagement(score) {
+  const el = document.getElementById("engagementScore");
+  el.textContent = score === null ? "—" : `${score}%`;
+  const level = score >= 70 ? "high" : score >= 40 ? "mid" : "low";
+  el.className = "engagement-score" + (score !== null ? ` ${level}` : "");
+}
+
 
 const predavanjeName = new URLSearchParams(window.location.search).get("name");
 if (predavanjeName) {
@@ -94,20 +120,90 @@ function startStream() {
   img.src = `${BACKEND}/video-feed`;
   img.style.display = "block";
   document.getElementById("placeholder").style.display = "none";
+  document.getElementById("videoPlayback").style.display = "none";
   document.getElementById("liveBadge").classList.add("visible");
   document.getElementById("startBtn").disabled = true;
   document.getElementById("stopBtn").disabled = false;
+  document.getElementById("summaryCard").style.display = "none";
+  document.querySelector(".transcript-card").classList.remove("shrunk");
+
+  // start fake live engagement updates
+  let fakeScore = 50;
+  setEngagement(fakeScore);
+  engagementInterval = setInterval(() => {
+    fakeScore = Math.min(100, Math.max(0, fakeScore + (Math.random() * 14 - 6)));
+    setEngagement(Math.round(fakeScore));
+  }, 1800);
+  volumeInterval = setInterval(() => animateVolumeMeter(true, fakeScore), 120);
 }
 
 function stopStream() {
   streaming = false;
+
+  // stop engagement live updates, show final score
+  clearInterval(engagementInterval);
+  clearInterval(volumeInterval);
+  animateVolumeMeter(false, 0);
+  clearInterval(volumeInterval);
+  animateVolumeMeter(false, 0);
+  const finalScore = Math.round(40 + Math.random() * 45);
+  setEngagement(finalScore);
   const img = document.getElementById("videoFeed");
   img.src = "";
   img.style.display = "none";
-  document.getElementById("placeholder").style.display = "flex";
   document.getElementById("liveBadge").classList.remove("visible");
   document.getElementById("startBtn").disabled = false;
   document.getElementById("stopBtn").disabled = true;
+
+  // show recorded video placeholder
+  const video = document.getElementById("videoPlayback");
+  video.src = "";
+  video.style.display = "block";
+  document.getElementById("placeholder").style.display = "none";
+
+  // show summary box and fake-generate summary
+  showSummary();
+}
+
+function showSummary() {
+  const card = document.getElementById("summaryCard");
+  const text = document.getElementById("summaryText");
+  card.style.display = "block";
+  document.querySelector(".transcript-card").classList.add("shrunk");
+  card.scrollIntoView({ behavior: "smooth", block: "start" });
+
+  // collect transcript lines for the real implementation later
+  const transcriptLines = Array.from(
+    document.getElementById("transcriptText").querySelectorAll("p")
+  ).map(p => p.textContent).join(" ");
+
+  // fake placeholder summary for now
+  text.innerHTML = "";
+  const placeholder = `
+    <p>The lecture covered the fundamentals of computer vision and real-time image processing pipelines.</p>
+    <p>Key topics included edge detection algorithms, convolutional neural networks, and their application to object recognition tasks.</p>
+    <p>The speaker demonstrated a live OCR pipeline and discussed latency optimizations for embedded hardware deployment.</p>
+  `.trim();
+
+  // typewriter effect so it feels alive
+  const sentences = placeholder.match(/<p>.*?<\/p>/g) || [];
+  let i = 0;
+  function addNext() {
+    if (i >= sentences.length) return;
+    const p = document.createElement("p");
+    p.innerHTML = sentences[i].replace(/<\/?p>/g, "");
+    text.appendChild(p);
+    p.style.opacity = "0";
+    p.style.transform = "translateY(6px)";
+    p.style.transition = "opacity 0.4s ease, transform 0.4s ease";
+    requestAnimationFrame(() => {
+      p.style.opacity = "1";
+      p.style.transform = "translateY(0)";
+    });
+    i++;
+    setTimeout(addNext, 500);
+  }
+  addNext();
 }
 
 fetchDevices();

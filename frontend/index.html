@@ -18,20 +18,60 @@
 <div class="main">
 
   <div class="info-card">
-    <div class="info-left">
-      <div class="status-dot" id="statusDot"></div>
-      <div>
-        <div class="camera-name" id="cameraName">No device selected</div>
-        <div class="camera-mxid" id="cameraMxid">—</div>
+
+    <!-- Left: engagement score -->
+    <div class="info-half info-engagement">
+      <span class="ocr-label">Engagement score</span>
+      <div class="engagement-body">
+        <div class="engagement-score" id="engagementScore">—</div>
+      </div>
+      <div class="volume-meter" id="volumeMeter">
+        <div class="vm-bar"></div>
+        <div class="vm-bar"></div>
+        <div class="vm-bar"></div>
+        <div class="vm-bar"></div>
+        <div class="vm-bar"></div>
+        <div class="vm-bar"></div>
+        <div class="vm-bar"></div>
+        <div class="vm-bar"></div>
+        <div class="vm-bar"></div>
+        <div class="vm-bar"></div>
+        <div class="vm-bar"></div>
+        <div class="vm-bar"></div>
+        <div class="vm-bar"></div>
+        <div class="vm-bar"></div>
+        <div class="vm-bar"></div>
+        <div class="vm-bar"></div>
+        <div class="vm-bar"></div>
+        <div class="vm-bar"></div>
+        <div class="vm-bar"></div>
+        <div class="vm-bar"></div>
       </div>
     </div>
-    <div style="display:flex; gap:8px; align-items:center">
-      <select id="deviceSelect">
-        <option value="">— select device —</option>
-      </select>
-      <button class="refresh-btn" onclick="fetchDevices()">↺ Scan</button>
-      <button class="refresh-btn connect-btn" onclick="connectDevice()">Connect</button>
+
+    <div class="info-divider"></div>
+
+    <!-- Right: device controls -->
+    <div class="info-half info-device">
+      <span class="ocr-label">Device</span>
+      <div class="info-device-body">
+        <div class="info-left">
+          <div class="status-dot" id="statusDot"></div>
+          <div>
+            <div class="camera-name" id="cameraName">No device selected</div>
+            <div class="camera-mxid" id="cameraMxid">—</div>
+          </div>
+        </div>
+        <div style="display:flex; gap:8px; align-items:center; flex-wrap:wrap;">
+          <select id="deviceSelect">
+            <option value="">— select device —</option>
+          </select>
+          <button class="refresh-btn" onclick="fetchDevices()">↺ Scan</button>
+          <button class="refresh-btn connect-btn" onclick="connectDevice()">Connect</button>
+        </div>
+      </div>
     </div>
+
   </div>
 
   <!-- Two column layout -->
@@ -47,12 +87,13 @@
           <p>Stream not started</p>
         </div>
         <img id="videoFeed" src="" alt="Camera feed" style="display:none" />
+        <video id="videoPlayback" style="display:none; width:100%; height:100%; object-fit:cover;" controls></video>
         <div class="live-badge" id="liveBadge">● live</div>
       </div>
 
       <div class="controls">
         <button class="btn btn-primary" id="startBtn" onclick="startStream()" disabled>Start stream</button>
-        <button class="btn btn-secondary" id="stopBtn" onclick="stopStream()" disabled>Stop</button>
+        <button class="btn btn-secondary" id="stopBtn" onclick="stopStream()">Stop</button>
       </div>
 
       <div class="ocr-card">
@@ -66,7 +107,7 @@
       </div>
     </div>
 
-    <!-- Right: transcript -->
+    <!-- Right: transcript + summary -->
     <div class="col-right">
       <div class="transcript-card">
         <div class="ocr-header">
@@ -75,6 +116,16 @@
         </div>
         <div class="transcript-text" id="transcriptText">
           <span class="ocr-empty">Waiting for speech...</span>
+        </div>
+      </div>
+
+      <div class="summary-card" id="summaryCard" style="display:none;">
+        <div class="ocr-header">
+          <span class="ocr-label">Summary</span>
+          <div class="summary-badge">AI</div>
+        </div>
+        <div class="summary-text" id="summaryText">
+          <span class="ocr-empty">Generating summary...</span>
         </div>
       </div>
     </div>
