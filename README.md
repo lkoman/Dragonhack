@@ -1,4 +1,6 @@
-# tvoja mami
+# Rostra
+
+Rostra is a multimodel AI web app for live lectures: speech-to-text, slide OCR, presenter engagement score, and GPT summaries. It turns voice, text, and visuals into real-time feedback and a searchable archive for later.
 
 ## How to run
 ### Naredi venv (ce zelis, priporocam) nujno potreben Python 3.12
