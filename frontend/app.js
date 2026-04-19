@@ -207,3 +207,161 @@ function showSummary() {
 }
 
 fetchDevices();
+
+import { SonioxClient } from "https://esm.sh/@soniox/client";
+
+/* ---------------- STATE ---------------- */
+
+let lockedText = "";
+let liveText = "";
+let recording;
+
+const transcriptDiv = document.getElementById("transcriptText");
+const transcriptDot = document.getElementById("transcriptDot");
+
+/* ---------------- RENDER ---------------- */
+
+function render() {
+  transcriptDiv.innerHTML =
+    `<span class="locked-text">${lockedText}</span>` +
+    (liveText
+      ? ` <span class="live-text">${liveText}</span>`
+      : "");
+
+  console.log("---- RENDER ----");
+  console.log("LOCKED:", lockedText);
+  console.log("LIVE:", liveText);
+}
+
+/* ---------------- CLIENT ---------------- */
+
+const client = new SonioxClient({
+  api_key: "12e95c60016fa692812197e892e6193d9c38a3b8037ac81b871efe4b2ba1b4dc"
+});
+
+/* ---------------- START STREAM ---------------- */
+
+window.startStream = async function () {
+
+  console.log("START TRANSCRIPTION");
+
+  transcriptDot.classList.add("active");
+
+  recording = client.realtime.record({
+    model: "stt-rt-v4",
+    language_hints: ["en", "sl"],
+    enable_endpoint_detection: true
+  });
+
+  /* -------- RESULT (LIVE ONLY) -------- */
+
+  recording.on("result", (result) => {
+    console.log("RESULT:", result);
+
+    let temp = "";
+
+    for (const token of result.tokens || []) {
+      if (!token.text) continue;
+      temp += token.text;
+    }
+
+    liveText = temp;
+
+    render();
+  });
+
+  /* -------- FINALIZED (LOCK) -------- */
+
+  recording.on("finalized", () => {
+    console.log("FINALIZED");
+
+    if (liveText.trim()) {
+      console.log("LOCK ADD:", liveText);
+
+      lockedText += (lockedText ? " " : "") + liveText.trim();
+    }
+
+    liveText = "";
+
+    render();
+    triggerSummary();
+  });
+
+  /* -------- ENDPOINT (fallback) -------- */
+
+  recording.on("endpoint", () => {
+    console.log("ENDPOINT");
+
+    if (liveText.trim()) {
+      console.log("FORCE LOCK:", liveText);
+
+      lockedText += (lockedText ? " " : "") + liveText.trim();
+    }
+
+    liveText = "";
+
+    render();
+    triggerSummary();
+  });
+
+  recording.on("error", console.error);
+};
+
+/* ---------------- STOP ---------------- */
+
+window.stopStream = async function () {
+  if (recording) {
+    console.log("STOP TRANSCRIPTION");
+
+    transcriptDot.classList.remove("active");
+
+    await recording.stop();
+  }
+};
+
+/* ---------------- SUMMARY ---------------- */
+
+let summaryTimeout;
+
+function triggerSummary() {
+  clearTimeout(summaryTimeout);
+
+  summaryTimeout = setTimeout(() => {
+    const text = lockedText;
+
+    console.log("SUMMARY INPUT:", text);
+
+    if (text.length < 30) return;
+
+    summarize(text);
+  }, 2000);
+}
+
+/* ---------------- OPENAI ---------------- */
+
+async function summarize(text) {
+  const summaryDiv = document.getElementById("ocrText");
+
+  const res = await fetch("https://api.openai.com/v1/responses", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "Authorization": "Bearer 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"
+    },
+    body: JSON.stringify({
+      model: "gpt-4.1-mini",
+      input: `Povzemi v alineje v slovenščini:\n${text}`
+    })
+  });
+
+  const data = await res.json();
+
+  console.log("OPENAI RAW:", data);
+
+  const output =
+    data.output_text ||
+    data.output?.[0]?.content?.[0]?.text ||
+    "Napaka pri povzetku";
+
+  summaryDiv.innerHTML = `<p>${output}</p>`;
+}

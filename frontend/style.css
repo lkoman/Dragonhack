@@ -613,3 +613,11 @@ select:hover, select:focus { border-color: var(--accent); }
 .volume-meter.active.high .vm-bar { background: var(--green); }
 .volume-meter.active.mid  .vm-bar { background: #c07a10; }
 .volume-meter.active.low  .vm-bar { background: var(--danger); }
+
+.live-text {
+  color: #38bdf8;
+}
+
+.locked-text {
+  color: var(--text);
+}
