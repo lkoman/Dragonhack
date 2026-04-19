@@ -1,4 +1,4 @@
-# tvoja mami
+# Rostra
 
 ## How to run
 ### Naredi venv (ce zelis, priporocam) nujno potreben Python 3.12
