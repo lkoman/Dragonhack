@@ -3,3 +3,4 @@ backend/__pycache__
 backend/utils/__pycache__
 .env
 backend/.env
+backend/data/

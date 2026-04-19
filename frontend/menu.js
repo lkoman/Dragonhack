@@ -16,13 +16,12 @@ function render() {
   const list = loadPredavanja();
   const ul = document.getElementById("predavanjaList");
   const empty = document.getElementById("menuEmpty");
-  ul.innerHTML = "";
 
-  if (list.length === 0) {
-    empty.style.display = "block";
-    return;
-  }
-  empty.style.display = "none";
+  // Remove only dynamic (non-static) items, keep hardcoded ones.
+  ul.querySelectorAll(":scope > li:not([data-static])").forEach(li => li.remove());
+
+  const hasStatic = ul.querySelector(":scope > li[data-static]") !== null;
+  empty.style.display = list.length === 0 && !hasStatic ? "block" : "none";
 
   list.forEach((p, idx) => {
     const li = document.createElement("li");

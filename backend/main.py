@@ -1,3 +1,5 @@
+import json
+import re
 import threading
 import time
 from pathlib import Path
@@ -18,6 +20,13 @@ from utils.host_process_detections import CropConfigsCreator
 
 REQ_WIDTH, REQ_HEIGHT = 1152, 640
 MODELS_DIR = Path(__file__).parent / "depthai_models"
+DATA_DIR = Path(__file__).parent / "data" / "predavanja"
+DATA_DIR.mkdir(parents=True, exist_ok=True)
+
+
+def _predavanje_slug(name: str) -> str:
+    s = re.sub(r"[^a-zA-Z0-9_-]+", "_", (name or "").strip())
+    return (s[:80] or "default")
 
 app = FastAPI()
 
@@ -389,6 +398,41 @@ def engagement_score():
         "final_score": engagement_final_score,
         "logging": engagement_logging,
     })
+
+
+@app.get("/predavanja/{name}")
+def get_predavanje(name: str):
+    path = DATA_DIR / f"{_predavanje_slug(name)}.json"
+    if not path.exists():
+        return JSONResponse({
+            "name": name,
+            "transcript": "",
+            "summary": "",
+            "final_score": None,
+            "ocr_items": [],
+            "updated_at": None,
+        })
+    try:
+        return JSONResponse(json.loads(path.read_text(encoding="utf-8")))
+    except Exception as e:
+        return JSONResponse({"error": f"failed to read: {e}"}, status_code=500)
+
+
+@app.put("/predavanja/{name}")
+def put_predavanje(name: str, body: dict):
+    path = DATA_DIR / f"{_predavanje_slug(name)}.json"
+    data = {
+        "name": name,
+        "transcript": body.get("transcript", "") or "",
+        "summary": body.get("summary", "") or "",
+        "final_score": body.get("final_score", None),
+        "ocr_items": list(body.get("ocr_items", []) or []),
+        "updated_at": time.time(),
+    }
+    path.write_text(
+        json.dumps(data, ensure_ascii=False, indent=2), encoding="utf-8"
+    )
+    return JSONResponse(data)
 
 
 @app.get("/status")

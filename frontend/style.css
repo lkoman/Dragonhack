@@ -324,7 +324,7 @@ select:hover, select:focus { border-color: var(--accent); }
   box-shadow: var(--shadow-sm);
 }
 
-.transcript-card { min-height: 600px; transition: min-height 0.4s ease, max-height 0.4s ease; }
+.transcript-card { min-height: 140px; transition: min-height 0.4s ease, max-height 0.4s ease; }
 .transcript-card.shrunk { min-height: 0; max-height: 320px; overflow-y: auto; }
 
 .ocr-header {
