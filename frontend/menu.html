@@ -1,43 +1,50 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Dragonhack Jебачи — Menu</title>
-  <link rel="stylesheet" href="style.css" />
-</head>
-<body>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Dragonhack Jебачи — Menu</title>
+    <link rel="stylesheet" href="style.css" />
+  </head>
+  <body>
+    <header>
+      <h1>Dragonhack <span>Jебачи</span></h1>
+      <span class="version">v0.1</span>
+    </header>
 
-<header>
-  <h1>Dragonhack <span>Jебачи</span></h1>
-  <span class="version">v0.1</span>
-</header>
+    <div class="main">
+      <div class="menu-card">
+        <div class="menu-header">
+          <span class="ocr-label">Predavanja</span>
+        </div>
 
-<div class="main">
+        <form class="menu-add" id="addForm">
+          <input
+            type="text"
+            id="predavanjeName"
+            class="menu-input"
+            placeholder="Ime predavanja..."
+            autocomplete="off"
+            required
+          />
+          <button type="submit" class="btn btn-primary menu-add-btn">
+            + Add
+          </button>
+        </form>
 
-  <div class="menu-card">
-    <div class="menu-header">
-      <span class="ocr-label">Predavanja</span>
+        <ul class="menu-list" id="predavanjaList">
+          <!-- HARDCODED PREDAVANJE -->
+          <li class="menu-item">
+            <button class="btn" onclick="window.location.href = 'video.html'">
+              Family Guy Interview
+            </button>
+          </li>
+        </ul>
+
+        <div class="menu-empty" id="menuEmpty">
+          No predavanja yet. Add one above.
+        </div>
+      </div>
     </div>
-
-    <form class="menu-add" id="addForm">
-      <input
-        type="text"
-        id="predavanjeName"
-        class="menu-input"
-        placeholder="Ime predavanja..."
-        autocomplete="off"
-        required
-      />
-      <button type="submit" class="btn btn-primary menu-add-btn">+ Add</button>
-    </form>
-
-    <ul class="menu-list" id="predavanjaList"></ul>
-    <div class="menu-empty" id="menuEmpty">No predavanja yet. Add one above.</div>
-  </div>
-
-</div>
-
-<script src="menu.js"></script>
-</body>
+  </body>
 </html>

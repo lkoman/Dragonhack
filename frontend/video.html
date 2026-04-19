@@ -1,0 +1,116 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Dragonhack Jебачи</title>
+    <link rel="stylesheet" href="style.css" />
+  </head>
+  <body>
+    <header>
+      <a href="menu.html" class="back-link">← Menu</a>
+      <h1>Dragonhack <span>Jебачи</span></h1>
+      <span class="version">v0.1</span>
+      <span class="predavanje-title" id="predavanjeTitle"></span>
+    </header>
+
+    <div class="main">
+      <div class="info-card">
+        <div class="info-left">
+          <div class="status-dot" id="statusDot"></div>
+        </div>
+        <div style="display: flex; gap: 8px; align-items: center"></div>
+      </div>
+
+      <!-- Two column layout -->
+      <div class="columns">
+        <!-- Left: video + controls + OCR -->
+        <div class="col-left">
+          <div class="video-wrap" id="videoWrap">
+            <div class="video-placeholder" id="placeholder">
+              <svg
+                width="48"
+                height="48"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="1.5"
+              ></svg>
+            </div>
+
+            <video
+              id="videoPlayer"
+              controls
+              style="width: 100%; border-radius: 12px"
+            >
+              <source src="FamilyGuy9-11.mp4" type="video/mp4" />
+
+              <track
+                kind="captions"
+                srclang="en"
+                label="English"
+                src="familyguy9-11_en.vtt"
+                type="text/vtt"
+                default=""
+              />
+
+              <track
+                kind="subtitles"
+                srclang="sl"
+                label="Slovenian"
+                src="familyguy9-11_sl.vtt"
+                type="text/vtt"
+              />
+
+              Your browser does not support video.
+            </video>
+          </div>
+
+          <div class="ocr-card">
+            <div class="ocr-header">
+              <span class="ocr-label">OCR — detected text</span>
+              <div class="ocr-dot" id="ocrDot"></div>
+            </div>
+            <div class="ocr-text" id="ocrText">
+              <span class="ocr-empty">No text detected</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Right: transcript -->
+        <div class="col-right">
+          <div class="transcript-card">
+            <div class="ocr-header">
+              <span class="ocr-label">Transcript - summary </span>
+              <div class="ocr-dot" id="transcriptDot"></div>
+            </div>
+            <div class="summary-card">
+              <h3>Summary</h3>
+
+              <div>
+                <button class="refresh-btn connect-btn" onclick="setLang('en')">
+                  EN
+                </button>
+                <button class="refresh-btn connect-btn" onclick="setLang('si')">
+                  SI
+                </button>
+              </div>
+
+              <p id="summaryText"></p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <script>
+      const summaries = {
+        en: "In a political-style interview, Mrs. Griffin gives overly short and vague answers to serious civic questions. Instead of clear plans, her responses are random or inappropriate references (like “9/11”), creating a satirical effect that mocks shallow political communication.",
+        si: "V političnem intervjuju gospa Griffin na resna vprašanja o kriminalu, okolju in prometu odgovarja zelo kratko in nesmiselno. Namesto konkretnih načrtov daje nepovezane ali neprimerne odgovore (npr. “11. september”), kar ustvarja satiričen učinek in se norčuje iz površnih političnih odgovorov.",
+      };
+
+      function setLang(lang) {
+        document.getElementById("summaryText").innerText = summaries[lang];
+      }
+    </script>
+  </body>
+</html>
