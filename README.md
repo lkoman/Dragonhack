@@ -10,6 +10,7 @@ later review.
 
 -   Python 3.12
 -   (Recommended) virtual environment
+-   OAK Camera
 
 ## Setup
 
